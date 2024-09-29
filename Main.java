@@ -2,9 +2,11 @@ package lesson1;
 
 public class Main {
     public static void main(String[] args) {
-        ServerWindow serverWindow = new ServerWindow();
-        new ClientGUI(serverWindow);
-        new ClientGUI(serverWindow);
+
+        Server server = new Server(new ServerWindow(), new FileStorage());
+
+        new Client(new ClientGUI(), server);
+        new Client(new ClientGUI(), server);
 
     }
 }

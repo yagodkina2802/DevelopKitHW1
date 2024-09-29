@@ -1,115 +1,47 @@
 package lesson1;
 
+import lesson1.Server;
+import lesson1.ServerView;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.util.ArrayList;
-import java.util.List;
 
-public class ServerWindow extends JFrame {
-    private static final int WINDOW_HEIGHT = 300;
-    private static final int WINDOW_WIDTH = 400;
-    private static final int WINDOW_POSX = 500;
-    private static final int WINDOW_POSY = 550;
-    public static final String LOG_PATH = "src/server/log.txt";
+public class ServerWindow extends JFrame implements ServerView {
+    public static final int WIDTH = 400;
+    public static final int HEIGHT = 300;
 
-    private final JButton btnStart = new JButton("Start");
-    private final JButton btnStop = new JButton("Stop");
-    JTextArea log;
-    private boolean isServerWorking;
-    List<ClientGUI> clientGUIList;
-    private int clientGUi;
+    private JButton btnStart, btnStop;
+    private JTextArea log;
 
-    public static void main(String[] args) {
-        new ServerWindow();
-    }
-    ServerWindow(){
-        isServerWorking = false;
-        btnStop.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                isServerWorking = false;
-                System.out.println("Server stopped " + isServerWorking + "\n");
+    private Server server;
 
-            }
-        });
-        btnStart.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                isServerWorking = true;
-                System.out.println("Server started " + isServerWorking + "\n");
-            }
-        });
-        clientGUIList = new ArrayList<ClientGUI>();
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setBounds(WINDOW_POSX, WINDOW_POSY, WINDOW_WIDTH,WINDOW_HEIGHT);
-        setResizable(false);
-        setTitle("Chat server");
-        setAlwaysOnTop(true);
-        setLayout(new GridLayout(1, 2));
-        add(btnStart);
-        add(btnStop);
+    public ServerWindow(){
+        setting();
+        createPanel();
+
         setVisible(true);
     }
-    public boolean connectUser(ClientGUI clientGUI){
-        if(!isServerWorking){
-            return false;
-        }
-        clientGUIList.add(clientGUI);
-        return true;
-    }
-    public String getLog(){
-        return readLog();
-    }
-    private String readLog(){
-        StringBuilder stringBuilder = new StringBuilder();
-        try (FileReader reader = new FileReader(LOG_PATH);){
-            int c;
-            while ((c = reader.read()) != -1){
-                stringBuilder.append((char) c);
-            }
-            stringBuilder.delete(stringBuilder.length()-1, stringBuilder.length());
-            return stringBuilder.toString();
-        } catch (Exception e){
-            e.printStackTrace();
-            return null;
-        }
-    }
-    public void disconnectUser(ClientGUI clientGUI){
-        clientGUI.remove(clientGUi);
-        if(clientGUI != null){
-            clientGUI.disconnectFromServer();
-        }
-    }
-    public void message(String text){
-        if(!isServerWorking){
-            return;
-        }
-        text += "";
-        appendLog(text);
-        answerAll(text);
-        saveInLog(text);
-    }
-    private void answerAll(String text){
-    for(ClientGUI clientGUI: clientGUIList){
-        clientGUI.answer(text);
-        }
+
+
+    @Override
+    public void setServer(Server server) {
+        this.server = server;
     }
 
-    private void saveInLog(String text){
-        try(FileWriter writer = new FileWriter(LOG_PATH, true)){
-            writer.write(text);
-            writer.write("\n");
-        }catch(Exception e){
-            e.printStackTrace();
-        }
+    private void setting() {
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setSize(WIDTH, HEIGHT);
+        setResizable(false);
+        setTitle("Chat server");
+        setLocationRelativeTo(null);
     }
-    private void appendLog(String text){
-        log.append(text + "\n");
+
+    public Server getConnection(){
+        return server;
     }
+
     private void createPanel() {
         log = new JTextArea();
         add(log);
@@ -118,33 +50,20 @@ public class ServerWindow extends JFrame {
 
     private Component createButtons() {
         JPanel panel = new JPanel(new GridLayout(1, 2));
-//        btnStart.setSelected(true);
-//        btnStop = new JButton("Stop");
+        btnStart = new JButton("Start");
+        btnStop = new JButton("Stop");
 
         btnStart.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (isServerWorking){
-                    appendLog("Сервер уже был запущен");
-                } else {
-                    isServerWorking = true;
-                    appendLog("Сервер запущен!");
-                }
+                server.start();
             }
         });
 
         btnStop.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (!isServerWorking){
-                    appendLog("Сервер уже был остановлен");
-                } else {
-                    isServerWorking = false;
-                    while (!clientGUIList.isEmpty()){
-                        disconnectUser(clientGUIList.get(clientGUIList.size()-1));
-                    }
-                    appendLog("Сервер остановлен!");
-                }
+                server.stop();
             }
         });
 
@@ -152,6 +71,9 @@ public class ServerWindow extends JFrame {
         panel.add(btnStop);
         return panel;
     }
+
+    @Override
+    public void sendMessage(String message) {
+        log.append(message);
+    }
 }
-
-
